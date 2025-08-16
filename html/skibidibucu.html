@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signup - PhysiPack</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-purple-900 to-blue-900 text-white">
+
+  <div class="bg-gray-900/70 backdrop-blur-md p-8 rounded-2xl shadow-2xl w-full max-w-md">
+    <h2 class="text-3xl font-bold mb-6 text-center">Sign Up for PhysiPack</h2>
+    <form id="signupForm" class="space-y-4">
+      
+      <input id="username" type="text" placeholder="Username" required
+        class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 focus:ring-2 focus:ring-purple-600" />
+
+      <input id="email" type="email" placeholder="Email" required
+        class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 focus:ring-2 focus:ring-purple-600" />
+
+      <input id="password" type="password" placeholder="Password" required
+        class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 focus:ring-2 focus:ring-purple-600" />
+
+      <input id="confirmPassword" type="password" placeholder="Confirm Password" required
+        class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 focus:ring-2 focus:ring-purple-600" />
+
+      <!-- Grade dropdown goes last -->
+      <select id="grade" required
+        class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 focus:ring-2 focus:ring-purple-600">
+        <option value="" disabled selected>Select your grade</option>
+        <option value="6">Grade 6</option>
+        <option value="7">Grade 7</option>
+        <option value="8">Grade 8</option>
+        <option value="9">Grade 9</option>
+        <option value="10">Grade 10</option>
+        <option value="11">Grade 11</option>
+        <option value="12">Grade 12</option>
+      </select>
+
+      <button type="submit"
+        class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-3 rounded-xl transition duration-200 shadow-md">
+        Sign Up
+      </button>
+    </form>
+
+    <p class="mt-6 text-center text-gray-400">
+      Already have an account?
+      <a href="login.html" class="ml-2 text-purple-400 hover:text-purple-300 underline">Login</a>
+    </p>
+  </div>
+
+  <script type="module">
+    import { auth, db } from "../js/firebase/firebase-config.js";
+    import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
+    import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
+
+    const form = document.getElementById("signupForm");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const username = document.getElementById("username").value;
+      const email = document.getElementById("email").value;
+      const grade = document.getElementById("grade").value;
+      const password = document.getElementById("password").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
+
+      if (password !== confirmPassword) {
+        alert("Passwords do not match!");
+        return;
+      }
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // Save user profile in Firestore with role_id = 2 (normal user)
+        await setDoc(doc(db, "users", user.uid), {
+          username: username,
+          email: email,
+          grade: grade,
+          role_id: 2,
+          createdAt: new Date()
+        });
+
+        alert("Signup successful!");
+        window.location.href = "login.html";
+      } catch (error) {
+        console.error("Signup error:", error.message);
+        alert("Error: " + error.message);
+      }
+    });
+  </script>
+</body>
+</html>
