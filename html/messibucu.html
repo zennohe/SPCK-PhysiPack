@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Up - PhysiPack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+
+<body
+    class="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-purple-900 to-blue-900 text-white">
+    <div class="bg-gray-900/70 backdrop-blur-md p-8 rounded-2xl shadow-2xl w-full max-w-md">
+        <h2 class="text-3xl font-bold mb-6 text-center">Sign Up for PhysiPack</h2>
+
+        <!-- NOTE: removed action="/signup" so we handle submission in JS -->
+        <form id="signupForm" class="space-y-4" novalidate>
+            <input id="signupEmail" type="email" placeholder="Email"
+                class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                required />
+            <input id="signupUsername" type="text" placeholder="Username"
+                class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                required />
+
+            <!-- Password Input with Eye Icon -->
+            <div class="relative">
+                <input id="password" type="password" placeholder="Password" name="password"
+                    class="w-full p-3 pr-10 bg-gray-800 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    required />
+                <button type="button" onmousedown="togglePassword('password', true)"
+                    onmouseup="togglePassword('password', false)" onmouseleave="togglePassword('password', false)"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
+                    <i data-lucide="eye"></i>
+                </button>
+            </div>
+
+            <!-- Confirm Password Input with Eye Icon -->
+            <div class="relative">
+                <input id="confirm-password" type="password" placeholder="Confirm Password" name="confirm-password"
+                    class="w-full p-3 pr-10 bg-gray-800 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    required />
+                <button type="button" onmousedown="togglePassword('confirm-password', true)"
+                    onmouseup="togglePassword('confirm-password', false)"
+                    onmouseleave="togglePassword('confirm-password', false)"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
+                    <i data-lucide="eye"></i>
+                </button>
+            </div>
+
+            <select id="signupGrade" name="grade"
+                class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 text-white" required>
+                <option value="">Select Grade</option>
+                <option value="6">Grade 6</option>
+                <option value="7">Grade 7</option>
+                <option value="8">Grade 8</option>
+                <option value="9">Grade 9</option>
+                <option value="10">Grade 10</option>
+            </select>
+
+            <button id="signupBtn" type="submit"
+                class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-3 rounded-xl transition duration-200 shadow-md">
+                Sign Up
+            </button>
+        </form>
+
+        <p id="signupMessage" class="mt-4 text-center text-sm text-gray-300"></p>
+
+        <p class="mt-6 text-center text-gray-400">
+            Already have an account?
+            <a href="login.html" class="ml-2 text-purple-400 hover:text-purple-300 underline">Login</a>
+        </p>
+    </div>
+
+    <script type="module" src="firebase-config.js"></script>
+
+    <script>
+        function togglePassword(id, show) {
+            const input = document.getElementById(id);
+            if (input) input.type = show ? "text" : "password";
+        }
+        lucide.createIcons();
+    </script>
+
+    <!-- Firebase & signup logic -->
+    <script type="module">
+        // import your firebase-config module that exports `auth` and `db`
+        import { auth, db } from "../js/firebase/firebase-config.js";
+        import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
+        import { setDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
+
+        const form = document.getElementById('signupForm');
+        const messageEl = document.getElementById('signupMessage');
+
+        // password rules: min 6 chars, at least 1 lower, 1 upper, 1 digit
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+
+        function showMessage(text, isError = false) {
+            messageEl.textContent = text;
+            messageEl.classList.toggle('text-red-400', isError);
+            messageEl.classList.toggle('text-green-400', !isError);
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showMessage('', false);
+
+            const email = document.getElementById('signupEmail').value.trim();
+            const username = document.getElementById('signupUsername').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const grade = document.getElementById('signupGrade').value;
+
+            // Client-side validation
+            if (!email.includes('@')) {
+                showMessage('Invalid email format. Must include @', true);
+                return;
+            }
+            if (!passwordRegex.test(password)) {
+                showMessage('Password must be at least 6 chars and include uppercase, lowercase and a number.', true);
+                return;
+            }
+            if (password !== confirmPassword) {
+                showMessage('Passwords do not match.', true);
+                return;
+            }
+
+            try {
+                // Create user in Firebase Auth
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // Save extra profile data in Firestore under users/{uid}
+                await setDoc(doc(db, 'users', user.uid), {
+                    username: username || null,
+                    email: user.email,
+                    grade: grade || null,
+                    createdAt: serverTimestamp()
+                });
+
+                showMessage('✅ Signup successful — redirecting...', false);
+                form.reset();
+
+                // optional: redirect to login or dashboard
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1100);
+            } catch (err) {
+                // show firebase error message to user
+                showMessage(err.message || 'Signup failed', true);
+                console.error('Signup error:', err);
+            }
+        });
+    </script>
+</body>
+
+</html>
