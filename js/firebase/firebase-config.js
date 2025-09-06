@@ -1,28 +1,37 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-analytics.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
+// ✅ Firebase core
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+// ✅ Auth & Firestore
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// ✅ Optional: Analytics (only works on https + with proper Firebase hosting)
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyDB3vsCg_Hs-HDRgCjhH3IlSHygaEa0iFA",
   authDomain: "bust-all-over-my-face.firebaseapp.com",
   projectId: "bust-all-over-my-face",
-  storageBucket: "bust-all-over-my-face.firebasestorage.app",
+  storageBucket: "bust-all-over-my-face.appspot.com",
   messagingSenderId: "795972389742",
   appId: "1:795972389742:web:3e1da102065ddb91f78f7f",
   measurementId: "G-BGNPK1ESZJ",
 };
 
-// Initialize Firebase
+// 🔥 Initialize
 export const app = initializeApp(firebaseConfig);
-export const analytics = getAnalytics(app);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-console.log(app.name);
+// ✅ Analytics (optional, safe to ignore on localhost)
+let analytics = null;
+try {
+  analytics = getAnalytics(app);
+  console.log("Analytics initialized ✅");
+} catch (err) {
+  console.warn("Analytics not supported in this environment:", err.message);
+}
+
+console.log("Firebase initialized:", app.name);
+
+export { analytics };

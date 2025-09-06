@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen flex flex-col bg-gradient-to-br from-black via-purple-900 to-blue-900 text-white">
+    <!-- Navbar -->
+    <header class="bg-gray-900/80 backdrop-blur-md shadow-md py-4 px-6 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-purple-300">PhysiPack</h1>
+        <nav class="space-x-4 text-sm font-medium flex items-center">
+            <a href="html/lessons.html" class="hover:text-purple-400">Lessons</a>
+            <a href="html/my-progress.html" class="hover:text-purple-400">My Progress</a>
+            <a href="html/leaderboards.html" class="hover:text-purple-400">Gambling</a>
+            <a href="html/leaderboards.html" class="hover:text-purple-400">Leaderboards</a>
+            <a href="html/settings.html" class="hover:text-purple-400">Settings</a>
+
+            <!-- Logout button -->
+            <button id="logout-btn" class="hover:text-purple-400">Logout</button>
+        </nav>
+    </header>
+
+    <!-- Hello User Greeting -->
+    <div id="greeting" class="px-6 pt-4 text-lg font-medium text-purple-200">
+        Hello User! 🫡
+    </div> 
+
+    <h1>In todays lesson you will be learning about... $succac123 !</h1>
+    <img src="$succac123" alt="$succac123">
+
+
+
+    <!-- Scripts at bottom -->
+    <script type="module">
+        import { auth } from "../js/firebase/firebase-config.js";
+        import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        const greetingDiv = document.getElementById("greeting");
+        const adminContainer = document.getElementById("admin-btn-container");
+
+        // Get username from localStorage if exists
+        const storedUser = JSON.parse(localStorage.getItem("user"));
+        if (storedUser) {
+            // ✅ Greeting
+            greetingDiv.textContent = `Hello ${storedUser.username || storedUser.name || storedUser.email}! 🫡`;
+        }
+
+        // Protect page if not logged in
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = "html/login2.html";
+            }
+        });
+
+        // Logout button
+        const logoutBtn = document.getElementById("logout-btn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", async () => {
+                try {
+                    await signOut(auth);
+                    localStorage.removeItem("user"); // 🧹 clear localStorage
+                    console.log("User signed out");
+                    window.location.href = "html/login2.html";
+                } catch (err) {
+                    console.error("Logout error:", err);
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
