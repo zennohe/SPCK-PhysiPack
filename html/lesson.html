@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson | PhysiPack</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen flex flex-col bg-gradient-to-br from-black via-purple-900 to-blue-900 text-white">
+
+  <!-- Navbar -->
+  <header class="bg-gray-900/80 backdrop-blur-md shadow-md py-4 px-6 flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-purple-300">PhysiPack</h1>
+    <nav class="space-x-4 text-sm font-medium flex items-center">
+      <a href="lessons.html" class="hover:text-purple-400">Lessons</a>
+      <a href="my-progress.html" class="hover:text-purple-400">My Progress</a>
+      <a href="leaderboards.html" class="hover:text-purple-400">Gambling</a>
+      <a href="leaderboards.html" class="hover:text-purple-400">Leaderboards</a>
+      <a href="settings.html" class="hover:text-purple-400">Settings</a>
+
+      <!-- Admin button (injected dynamically) -->
+      <span id="admin-btn-container"></span>
+
+      <!-- Logout -->
+      <button id="logout-btn" class="hover:text-purple-400">Logout</button>
+    </nav>
+  </header>
+
+  <!-- Greeting -->
+  <div id="greeting" class="px-6 pt-4 text-lg font-medium text-purple-200">
+    Hello User! 🫡
+  </div>
+
+  <!-- Lesson Content -->
+  <main class="flex-grow px-6 py-8">
+    <h1 id="lesson-title" class="text-3xl font-bold mb-4 text-purple-300"></h1>
+    <p id="lesson-description" class="mb-6 text-gray-300"></p>
+
+    <!-- Dynamically loaded content goes here -->
+    <div id="lesson-content" class="space-y-6"></div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800/80 text-sm text-center text-gray-400 py-4">
+    &copy; 2025 PhysiPack. All rights reserved.
+  </footer>
+
+  <!-- Firebase + Auth -->
+  <script type="module">
+    import { auth } from "../js/firebase/firebase-config.js";
+    import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const greetingDiv = document.getElementById("greeting");
+    const adminContainer = document.getElementById("admin-btn-container");
+
+    // Get username from localStorage if exists
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (storedUser) {
+      greetingDiv.textContent = `Hello ${storedUser.username || storedUser.name || storedUser.email}! 🫡`;
+
+      // Show admin button if role_id = 1
+      if (storedUser.role_id === 1) {
+        const adminLink = document.createElement("a");
+        adminLink.href = "./admin.html";
+        adminLink.textContent = "Admin";
+        adminLink.className = "ml-2 px-3 py-1 rounded bg-blue-700 hover:bg-blue-800";
+        adminContainer.appendChild(adminLink);
+      }
+    }
+
+    // Protect page if not logged in
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login2.html";
+      }
+    });
+
+    // Logout button
+    const logoutBtn = document.getElementById("logout-btn");
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", async () => {
+        try {
+          await signOut(auth);
+          localStorage.removeItem("user");
+          window.location.href = "login2.html";
+        } catch (err) {
+          console.error("Logout error:", err);
+        }
+      });
+    }
+  </script>
+
+  <!-- Lesson Loader -->
+  <script type="module" src="../js/lesson.js"></script>
+</body>
+
+</html>
