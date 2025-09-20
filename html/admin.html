@@ -4,67 +4,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Page</title>
+    <title>Admin - Create Lesson</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="min-h-screen flex flex-col bg-gradient-to-br from-black via-purple-900 to-blue-900 text-white">
+
     <!-- Navbar -->
     <header class="bg-gray-900/80 backdrop-blur-md shadow-md py-4 px-6 flex justify-between items-center">
         <h1 class="text-2xl font-bold text-purple-300">PhysiPack</h1>
         <nav class="space-x-4 text-sm font-medium flex items-center">
-            <a href="html/lessons.html" class="hover:text-purple-400">Lessons</a>
-            <a href="html/my-progress.html" class="hover:text-purple-400">My Progress</a>
-            <a href="html/leaderboards.html" class="hover:text-purple-400">Gambling</a>
-            <a href="html/leaderboards.html" class="hover:text-purple-400">Leaderboards</a>
-            <a href="html/settings.html" class="hover:text-purple-400">Settings</a>
-
-            <!-- Logout button -->
+            <a href="../index.html" class="hover:text-purple-400">Home</a>
+            <a href="lessons.html" class="hover:text-purple-400">Lessons</a>
+            <a href="settings.html" class="hover:text-purple-400">Settings</a>
             <button id="logout-btn" class="hover:text-purple-400">Logout</button>
         </nav>
     </header>
 
-    <!-- Hello User Greeting -->
-    <div id="greeting" class="px-6 pt-4 text-lg font-medium text-purple-200">
-        Hello User! 🫡
-    </div> 
+    <!-- Content -->
+    <main class="flex-grow p-6 flex flex-col items-center">
+        <h2 class="text-3xl font-bold text-purple-200 mb-8">📚 Create New Lesson</h2>
 
-    <!-- Scripts at bottom -->
+        <!-- Lesson Form -->
+        <form id="lesson-form"
+            class="space-y-6 w-full max-w-3xl bg-gray-900/70 backdrop-blur-lg p-8 rounded-2xl shadow-lg border border-purple-700/50">
+
+            <!-- General Info -->
+            <div>
+                <label class="block text-purple-300 mb-2">Lesson Name</label>
+                <input type="text" id="name"
+                    class="w-full px-4 py-2 rounded-lg bg-gray-800 text-white focus:ring-2 focus:ring-purple-500"
+                    required>
+            </div>
+
+            <div>
+                <label class="block text-purple-300 mb-2">Description</label>
+                <textarea id="desc" rows="3"
+                    class="w-full px-4 py-2 rounded-lg bg-gray-800 text-white focus:ring-2 focus:ring-purple-500"
+                    required></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-purple-300 mb-2">Grade</label>
+                    <input type="number" id="grade"
+                        class="w-full px-4 py-2 rounded-lg bg-gray-800 text-white focus:ring-2 focus:ring-purple-500"
+                        required>
+                </div>
+                <div>
+                    <label class="block text-purple-300 mb-2">XP Reward</label>
+                    <input type="number" id="xp"
+                        class="w-full px-4 py-2 rounded-lg bg-gray-800 text-white focus:ring-2 focus:ring-purple-500"
+                        required>
+                </div>
+            </div>
+
+            <!-- Media -->
+            <div>
+                <label class="block text-purple-300 mb-2">Thumbnail Image URL</label>
+                <input type="text" id="imgURL" placeholder="https://..."
+                    class="w-full px-4 py-2 rounded-lg bg-gray-800 text-white focus:ring-2 focus:ring-purple-500">
+            </div>
+
+            <div>
+                <label class="block text-purple-300 mb-2">Intro Video URL</label>
+                <input type="text" id="videoURL" placeholder="YouTube / MP4 link"
+                    class="w-full px-4 py-2 rounded-lg bg-gray-800 text-white focus:ring-2 focus:ring-purple-500">
+            </div>
+
+            <!-- Tags -->
+            <div>
+                <label class="block text-purple-300 mb-2">Tags</label>
+                <input type="text" id="tags" placeholder="motion, electricity..."
+                    class="w-full px-4 py-2 rounded-lg bg-gray-800 text-white focus:ring-2 focus:ring-purple-500">
+            </div>
+
+            <!-- Steps -->
+            <div>
+                <label class="block text-purple-300 mb-3">Steps</label>
+                <div id="steps-container" class="space-y-4"></div>
+                <button type="button" id="add-step"
+                    class="mt-3 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium shadow-md transition">+
+                    Add Step</button>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit"
+                class="w-full bg-blue-700 hover:bg-blue-800 py-3 rounded-lg font-semibold shadow-lg transition text-lg">🚀
+                Create Lesson</button>
+        </form>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800/80 text-sm text-center text-gray-400 py-4">
+        &copy; 2025 PhysiPack. All rights reserved.
+    </footer>
+
+    <!-- Firebase + Logic -->
     <script type="module">
-        import { auth } from "../js/firebase/firebase-config.js";
-        import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { db } from "../js/firebase/firebase-config.js";
+        import { collection, addDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        const greetingDiv = document.getElementById("greeting");
-        const adminContainer = document.getElementById("admin-btn-container");
+        const form = document.getElementById("lesson-form");
+        const stepsContainer = document.getElementById("steps-container");
+        const addStepBtn = document.getElementById("add-step");
 
-        // Get username from localStorage if exists
-        const storedUser = JSON.parse(localStorage.getItem("user"));
-        if (storedUser) {
-            // ✅ Greeting
-            greetingDiv.textContent = `Hello ${storedUser.username || storedUser.name || storedUser.email}! 🫡`;
-        }
+        let stepCount = 0;
 
-        // Protect page if not logged in
-        onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                window.location.href = "html/login2.html";
-            }
+        // Add Step Fields
+        addStepBtn.addEventListener("click", () => {
+            stepCount++;
+            const div = document.createElement("div");
+            div.className = "bg-gray-800/70 p-4 rounded-xl border border-purple-600/40";
+            div.innerHTML = `
+        <h3 class="font-semibold text-purple-300 mb-3">Step ${stepCount}</h3>
+        <textarea placeholder="Step Text" class="step-text w-full px-3 py-2 rounded-lg bg-gray-900 text-white focus:ring-2 focus:ring-purple-500 mb-3"></textarea>
+        <input type="text" placeholder="Step Image URL (optional)" class="step-img w-full px-3 py-2 rounded-lg bg-gray-900 text-white focus:ring-2 focus:ring-purple-500 mb-3">
+        <input type="text" placeholder="Step Video URL (optional)" class="step-video w-full px-3 py-2 rounded-lg bg-gray-900 text-white focus:ring-2 focus:ring-purple-500">
+      `;
+            stepsContainer.appendChild(div);
         });
 
-        // Logout button
-        const logoutBtn = document.getElementById("logout-btn");
-        if (logoutBtn) {
-            logoutBtn.addEventListener("click", async () => {
-                try {
-                    await signOut(auth);
-                    localStorage.removeItem("user"); // 🧹 clear localStorage
-                    console.log("User signed out");
-                    window.location.href = "html/login2.html";
-                } catch (err) {
-                    console.error("Logout error:", err);
+        // Save Lesson
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById("name").value;
+            const desc = document.getElementById("desc").value;
+            const grade = document.getElementById("grade").value;
+            const xp = document.getElementById("xp").value;
+            const imgURL = document.getElementById("imgURL").value;
+            const videoURL = document.getElementById("videoURL").value;
+            const tags = document.getElementById("tags").value.split(",").map(t => t.trim());
+
+            try {
+                const lessonRef = await addDoc(collection(db, "lessonPacks"), {
+                    name, desc, grade, XP: xp, imgURL, videoURL, tags
+                });
+
+                const stepDivs = document.querySelectorAll("#steps-container > div");
+                let index = 1;
+                for (const div of stepDivs) {
+                    const text = div.querySelector(".step-text").value;
+                    const img = div.querySelector(".step-img").value;
+                    const video = div.querySelector(".step-video").value;
+
+                    await setDoc(doc(db, "lessonPacks", lessonRef.id, "content", `step${index}`), {
+                        text, imgURL: img, videoURL: video
+                    });
+                    index++;
                 }
-            });
-        }
+
+                alert("✅ Lesson created successfully!");
+                form.reset();
+                stepsContainer.innerHTML = "";
+                stepCount = 0;
+            } catch (err) {
+                console.error("Error creating lesson:", err);
+                alert("❌ Failed to create lesson.");
+            }
+        });
     </script>
 </body>
 
