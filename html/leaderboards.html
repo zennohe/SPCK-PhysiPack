@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Leaderboards - PhysiPack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen flex flex-col bg-gradient-to-br from-black via-purple-900 to-blue-900 text-white">
+
+    <!-- Navbar -->
+    <header class="bg-gray-900/80 backdrop-blur-md shadow-md py-4 px-6 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-purple-300">PhysiPack</h1>
+        <nav class="space-x-4 text-sm font-medium flex items-center">
+            <a href="../index.html" class="hover:text-purple-400">Home</a>
+            <a href="lessons.html" class="hover:text-purple-400">Lessons</a>
+            <a href="my-progress.html" class="hover:text-purple-400">My Progress</a>
+            <a href="leaderboards.html" class="text-purple-400">Leaderboards</a>
+            <a href="settings.html" class="hover:text-purple-400">Settings</a>
+            <a href="login2.html" id="logout-btn" class="hover:text-purple-400">Logout</a>
+        </nav>
+    </header>
+
+    <main class="max-w-4xl w-full mx-auto p-6 flex-grow">
+        <div class="bg-gray-900/60 backdrop-blur-md rounded-2xl p-6 shadow-xl">
+            <h2 class="text-2xl font-bold text-purple-300 mb-4">🏆 Leaderboards</h2>
+            <p class="text-gray-300 mb-6">See who’s topping PhysiPack right now.</p>
+
+            <!-- Search -->
+            <input type="text" id="searchUser" placeholder="Search user..."
+                class="w-full mb-6 p-2 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none" />
+
+            <!-- Leaderboard list -->
+            <div id="leaderboard" class="space-y-3">
+                <p class="text-gray-400">Loading leaderboard...</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800/80 text-sm text-center text-gray-400 py-4 mt-auto">
+        &copy; 2025 PhysiPack. All rights reserved.
+    </footer>
+
+    <!-- Script -->
+    <script type="module">
+        import { auth, db } from "../js/firebase/firebase-config.js";
+        import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import {
+            collection,
+            query,
+            orderBy,
+            limit,
+            getDocs
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const leaderboardEl = document.getElementById("leaderboard");
+        const searchInput = document.getElementById("searchUser");
+        const logoutBtn = document.getElementById("logout-btn");
+
+        let allUsers = [];
+        let currentUserId = null;
+
+        // 🏆 Load leaderboard by total_XP
+        async function loadLeaderboard() {
+            leaderboardEl.innerHTML = `<p class="text-gray-400">Loading...</p>`;
+            try {
+                const q = query(collection(db, "users"), orderBy("total_XP", "desc"), limit(50));
+                const snapshot = await getDocs(q);
+
+                allUsers = [];
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    allUsers.push({
+                        id: docSnap.id,
+                        username: data.username || "Unnamed",
+                        total_XP: data.total_XP || 0,
+                        profileImage: data.profileImage || "https://cdn.discordapp.com/attachments/1409911801252020386/1421338977751007383/image.png?ex=68d8ac93&is=68d75b13&hm=d3b33b9f5003437c6dd9d6dd19a88858f37161cea5839f2bc95bf3a3ba9215b3&"
+                    });
+                });
+
+                renderLeaderboard(allUsers);
+            } catch (err) {
+                leaderboardEl.innerHTML = `<p class="text-red-400">Error loading leaderboard.</p>`;
+                console.error(err);
+            }
+        }
+
+        // 🖼 Render leaderboard
+        function renderLeaderboard(users) {
+            leaderboardEl.innerHTML = "";
+
+            users.forEach((u, index) => {
+                const isCurrent = u.id === currentUserId;
+                const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `#${index + 1}`;
+
+                const div = document.createElement("div");
+                div.className = `flex items-center justify-between p-3 rounded-lg ${isCurrent ? "bg-purple-800/70" : "bg-gray-800/50"}`;
+
+                div.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="text-xl">${medal}</span>
+            <img src="${u.profileImage}" class="w-10 h-10 rounded-full border border-gray-700" />
+            <span class="font-medium ${isCurrent ? "text-purple-300" : "text-white"}">${u.username}</span>
+          </div>
+          <span class="text-gray-300 font-semibold">${u.total_XP} XP</span>
+        `;
+
+                leaderboardEl.appendChild(div);
+            });
+        }
+
+        // 🔍 search filtering
+        searchInput.addEventListener("input", (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allUsers.filter(u => u.username.toLowerCase().includes(term));
+            renderLeaderboard(filtered);
+        });
+
+        // 🚪 logout
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", async (e) => {
+                e.preventDefault();
+                await signOut(auth);
+                localStorage.removeItem("user");
+                window.location.href = "login2.html";
+            });
+        }
+
+        // 🔑 auth state to highlight current user + load data
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = "login2.html";
+                return;
+            }
+            currentUserId = user.uid;
+            loadLeaderboard();
+        });
+    </script>
+</body>
+
+</html>

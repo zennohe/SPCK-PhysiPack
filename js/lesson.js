@@ -1,10 +1,14 @@
-import { db } from "./firebase/firebase-config.js";
+import { db, auth } from "./firebase/firebase-config.js";
 import {
   doc,
   getDoc,
   collection,
   getDocs,
+  updateDoc,
+  arrayUnion,
+  increment,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // Get lesson ID from URL
 const urlParams = new URLSearchParams(window.location.search);
@@ -13,6 +17,16 @@ const lessonId = urlParams.get("id");
 const titleEl = document.getElementById("lesson-title");
 const descEl = document.getElementById("lesson-description");
 const contentEl = document.getElementById("lesson-content");
+
+let currentUser = null;
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    currentUser = user;
+  } else {
+    window.location.href = "login2.html";
+  }
+});
 
 async function loadLesson() {
   if (!lessonId) {
@@ -49,7 +63,6 @@ async function loadLesson() {
       contentSnap.forEach((docSnap) => {
         const data = docSnap.data();
 
-        // Loop through all fields in each step document
         Object.entries(data).forEach(([key, value]) => {
           let html = "";
 
@@ -73,6 +86,44 @@ async function loadLesson() {
           wrapper.innerHTML = html;
           contentEl.appendChild(wrapper);
         });
+      });
+    }
+
+    // ✅ Add "Complete Lesson" button
+    const completeBtn = document.createElement("button");
+    completeBtn.textContent = `Complete Lesson (+${lesson.XP || 100} XP)`;
+    completeBtn.className =
+      "px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl shadow-lg hover:opacity-90 transition disabled:opacity-50";
+    contentEl.appendChild(completeBtn);
+
+    // ✅ Check if user already completed
+    if (currentUser) {
+      const userRef = doc(db, "users", currentUser.uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        if (userData.completedLessons?.includes(lessonId)) {
+          completeBtn.disabled = true;
+          completeBtn.textContent = `Lesson Completed ✅ (+${lesson.XP || 100} XP)`;
+        }
+      }
+
+      // ✅ Button logic
+      completeBtn.addEventListener("click", async () => {
+        if (!currentUser || completeBtn.disabled) return;
+
+        await updateDoc(userRef, {
+          total_XP: increment(lesson.XP || 100),
+          completedLessons: arrayUnion(lessonId),
+        });
+
+        completeBtn.disabled = true;
+        completeBtn.textContent = `Lesson Completed ✅ (+${lesson.XP || 100} XP)`;
+
+        // send back to lessons list
+        setTimeout(() => {
+          window.location.href = "lessons.html";
+        }, 1200);
       });
     }
   } catch (err) {
