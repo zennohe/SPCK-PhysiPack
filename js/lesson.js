@@ -10,7 +10,6 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// Get lesson ID from URL
 const urlParams = new URLSearchParams(window.location.search);
 const lessonId = urlParams.get("id");
 
@@ -21,11 +20,8 @@ const contentEl = document.getElementById("lesson-content");
 let currentUser = null;
 
 onAuthStateChanged(auth, (user) => {
-  if (user) {
-    currentUser = user;
-  } else {
-    window.location.href = "login2.html";
-  }
+  if (user) currentUser = user;
+  else window.location.href = "login2.html";
 });
 
 async function loadLesson() {
@@ -36,7 +32,6 @@ async function loadLesson() {
   }
 
   try {
-    // ✅ Fetch lesson doc
     const lessonRef = doc(db, "lessonPacks", lessonId);
     const lessonSnap = await getDoc(lessonRef);
 
@@ -47,40 +42,28 @@ async function loadLesson() {
     }
 
     const lesson = lessonSnap.data();
-
-    // Fill in basic info
     titleEl.textContent = lesson.name || "Untitled Lesson";
     descEl.textContent = lesson.desc || "";
 
-    // ✅ Load subcollection "content"
+    // ✅ Load content
     const contentRef = collection(db, "lessonPacks", lessonId, "content");
     const contentSnap = await getDocs(contentRef);
+    contentEl.innerHTML = "";
 
     if (contentSnap.empty) {
       contentEl.innerHTML = `<p class="text-gray-400">No content yet 🚧</p>`;
     } else {
-      contentEl.innerHTML = "";
       contentSnap.forEach((docSnap) => {
         const data = docSnap.data();
-
         Object.entries(data).forEach(([key, value]) => {
           let html = "";
-
           if (key.toLowerCase().includes("text")) {
             html = `<p class="text-gray-200 text-lg leading-relaxed mb-4">${value}</p>`;
           } else if (key.toLowerCase().includes("img")) {
-            html = `<img src="${value}" alt="Lesson Image" class="rounded-xl shadow-lg mb-6 mx-auto">`;
+            html = `<img src="${value}" class="rounded-xl shadow-lg mb-6 mx-auto">`;
           } else if (key.toLowerCase().includes("video")) {
-            html = `
-              <div class="aspect-w-16 aspect-h-9 mb-6">
-                <iframe src="${value}" 
-                        class="w-full h-64 rounded-xl shadow-lg"
-                        frameborder="0" allowfullscreen></iframe>
-              </div>`;
-          } else {
-            html = `<p class="text-gray-500 italic">⚠️ Unknown field: ${key}</p>`;
+            html = `<div class="aspect-w-16 aspect-h-9 mb-6"><iframe src="${value}" class="w-full h-64 rounded-xl shadow-lg" allowfullscreen></iframe></div>`;
           }
-
           const wrapper = document.createElement("div");
           wrapper.classList.add("mb-6");
           wrapper.innerHTML = html;
@@ -89,38 +72,72 @@ async function loadLesson() {
       });
     }
 
-    // ✅ Add "Complete Lesson" button
-    const completeBtn = document.createElement("button");
-    completeBtn.textContent = `Complete Lesson (+${lesson.XP || 100} XP)`;
-    completeBtn.className =
-      "px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl shadow-lg hover:opacity-90 transition disabled:opacity-50";
-    contentEl.appendChild(completeBtn);
+    // ✅ Create buttons container
+    const btnContainer = document.createElement("div");
+    btnContainer.className = "mt-6 flex gap-3 flex-wrap";
+    contentEl.appendChild(btnContainer);
 
-    // ✅ Check if user already completed
+    const xpBtn = document.createElement("button");
+    xpBtn.textContent = `+${lesson.XP || 100} XP`;
+    xpBtn.className =
+      "px-6 py-3 bg-green-600 hover:bg-green-700 rounded-xl shadow-lg font-semibold transition disabled:opacity-50";
+
+    const actionBtn = document.createElement("button");
+    actionBtn.className =
+      "px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-xl shadow-lg font-semibold transition disabled:opacity-50";
+
+    btnContainer.appendChild(xpBtn);
+    btnContainer.appendChild(actionBtn);
+
+    // ✅ Check user data
     if (currentUser) {
       const userRef = doc(db, "users", currentUser.uid);
       const userSnap = await getDoc(userRef);
-      if (userSnap.exists()) {
-        const userData = userSnap.data();
-        if (userData.completedLessons?.includes(lessonId)) {
-          completeBtn.disabled = true;
-          completeBtn.textContent = `Lesson Completed ✅ (+${lesson.XP || 100} XP)`;
-        }
+      const userData = userSnap.exists() ? userSnap.data() : {};
+
+      const alreadyCompleted = userData.completedLessons?.includes(lessonId);
+      const reviewedList = userData.recentlyReviewed || [];
+
+      // ✅ If user has completed lesson before
+      if (alreadyCompleted) {
+        xpBtn.disabled = true;
+        xpBtn.textContent = `XP Earned (+${lesson.XP || 100})`;
+        actionBtn.textContent = "Review Lesson 🔁";
+      } else {
+        actionBtn.textContent = "Mark Lesson Complete ✅";
       }
 
-      // ✅ Button logic
-      completeBtn.addEventListener("click", async () => {
-        if (!currentUser || completeBtn.disabled) return;
+      // ✅ Award XP + mark complete (first time)
+      xpBtn.addEventListener("click", async () => {
+        if (xpBtn.disabled) return;
 
         await updateDoc(userRef, {
           total_XP: increment(lesson.XP || 100),
           completedLessons: arrayUnion(lessonId),
         });
 
-        completeBtn.disabled = true;
-        completeBtn.textContent = `Lesson Completed ✅ (+${lesson.XP || 100} XP)`;
+        xpBtn.disabled = true;
+        xpBtn.textContent = `XP Earned (+${lesson.XP || 100})`;
+        actionBtn.textContent = "Review Lesson 🔁";
 
-        // send back to lessons list
+        alert("Lesson completed and XP added!");
+      });
+
+      // ✅ Handle review action
+      actionBtn.addEventListener("click", async () => {
+        const reviewedLesson = {
+          id: lessonId,
+          title: lesson.name || "Untitled Lesson",
+          date: new Date().toISOString(),
+        };
+
+        await updateDoc(userRef, {
+          recentlyReviewed: arrayUnion(reviewedLesson),
+        });
+
+        actionBtn.disabled = true;
+        actionBtn.textContent = "Lesson Reviewed ✅";
+
         setTimeout(() => {
           window.location.href = "lessons.html";
         }, 1200);
