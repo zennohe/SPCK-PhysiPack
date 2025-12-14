@@ -2,54 +2,128 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login - PhysiPack</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Axiom Academy</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 </head>
 
 <body
-    class="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-purple-900 to-blue-900 text-white">
-    <div class="bg-gray-900/70 backdrop-blur-md p-8 rounded-2xl shadow-2xl w-full max-w-md">
-        <h2 class="text-3xl font-bold mb-6 text-center">Login to PhysiPack</h2>
-        <form class="space-y-4" action="/login" method="POST">
-            <input type="email" placeholder="Email" name="email"
-                class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
-                required />
+  class="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-purple-900 to-blue-900 text-white">
 
-            <div class="relative">
-                <input id="password" type="password" placeholder="Password" name="password"
-                    class="w-full p-3 pr-10 bg-gray-800 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
-                    required />
-                <button type="button" onmousedown="togglePassword('password', true)"
-                    onmouseup="togglePassword('password', false)" onmouseleave="togglePassword('password', false)"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
-                    <i data-lucide="eye"></i>
-                </button>
-            </div>
+  <!-- 🔧 Password toggle helper -->
+  <script>
+    function togglePassword(id, show) {
+      const input = document.getElementById(id);
+      if (input) input.type = show ? "text" : "password";
+    }
+  </script>
 
-            <button type="submit"
-                class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-3 rounded-xl transition duration-200 shadow-md">
-                Login
-            </button>
-        </form>
+  <!-- 🔥 Auto-skip if already logged in -->
+  <script type="module">
+    import { auth, db } from "../js/firebase/firebase-config.js";
+    import { onAuthStateChanged } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { doc, getDoc } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        <p class="mt-6 text-center text-gray-400">
-            Don’t have an account?
-            <a href="signup.html" class="ml-2 text-purple-400 hover:text-purple-300 underline">Sign Up</a>
-        </p>
-    </div>
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
 
-    <script src="../js/firebase/firebase-config.js"></script>
+      const stored = localStorage.getItem("user");
 
-    <script>
-        function togglePassword(id, show) {
-            const input = document.getElementById(id);
-            input.type = show ? "text" : "password";
+      if (!stored) {
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+          localStorage.setItem("user", JSON.stringify(userDoc.data()));
+        } else {
+          localStorage.setItem("user", JSON.stringify({
+            uid: user.uid,
+            email: user.email
+          }));
         }
-        lucide.createIcons();
-    </script>
+      }
+
+      window.location.href = "../index.html";
+    });
+  </script>
+
+  <!-- Login card -->
+  <div class="bg-gray-900/70 backdrop-blur-md p-8 rounded-2xl shadow-2xl w-full max-w-md">
+    <h2 class="text-3xl font-bold mb-6 text-center">
+      Login to Axiom Academy
+    </h2>
+
+    <form id="loginForm" class="space-y-4">
+      <!-- Email -->
+      <input type="email" id="email" placeholder="Email"
+        class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
+        required />
+
+      <!-- Password -->
+      <div class="relative">
+        <input id="password" type="password" placeholder="Password"
+          class="w-full p-3 pr-10 bg-gray-800 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
+          required />
+        <button type="button" onmousedown="togglePassword('password', true)"
+          onmouseup="togglePassword('password', false)" onmouseleave="togglePassword('password', false)"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
+          <i data-lucide="eye"></i>
+        </button>
+      </div>
+
+      <!-- Error message -->
+      <p id="errorMsg" class="text-red-400 text-sm text-center hidden"></p>
+
+      <!-- Submit -->
+      <button id="login-btn"
+        class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-3 rounded-xl transition duration-200 shadow-md">
+        Login
+      </button>
+    </form>
+
+    <p class="mt-6 text-center text-gray-400">
+      Don’t have an account?
+      <a href="signup.html" class="ml-2 text-purple-400 hover:text-purple-300 underline">
+        Sign Up
+      </a>
+    </p>
+  </div>
+
+  <!-- Login logic -->
+  <script type="module">
+    import { auth } from "../js/firebase/firebase-config.js";
+    import { signInWithEmailAndPassword } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const loginBtn = document.getElementById("login-btn");
+    const errorMsg = document.getElementById("errorMsg");
+
+    loginBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      errorMsg.classList.add("hidden");
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        // ✅ redirect handled by auto-skip
+      } catch (err) {
+        errorMsg.textContent = err.message;
+        errorMsg.classList.remove("hidden");
+      }
+    });
+
+    lucide.createIcons();
+  </script>
 </body>
 
 </html>

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PhysiPack</title>
+  <title>Axiom Academy</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -12,102 +12,109 @@
 
   <!-- Navbar -->
   <header class="bg-gray-900/80 backdrop-blur-md shadow-md py-4 px-6 flex justify-between items-center">
-    <h1 class="text-2xl font-bold text-purple-300">PhysiPack</h1>
-    <nav class="space-x-4 text-sm font-medium flex items-center">
+    <h1 class="text-2xl font-bold text-purple-300">Axiom Academy</h1>
+
+    <nav class="flex items-center space-x-6 text-sm md:text-base font-medium">
       <a href="html/lessons.html" class="hover:text-purple-400">Lessons</a>
-      <a href="html/leaderboards.html" class="hover:text-purple-400">Leaderboards</a>
+      <a href="html/leaderboards.html" class="hover:text-purple-400">Leaderboard</a>
       <a href="html/settings.html" class="hover:text-purple-400">Settings</a>
       <span id="admin-btn-container"></span>
       <button id="logout-btn" class="hover:text-purple-400">Logout</button>
     </nav>
   </header>
 
-  <!-- Hello User Greeting -->
-  <div id="greeting" class="px-6 pt-4 text-lg font-medium text-purple-200">
-    Hello User! 🫡
-  </div>
+  <!-- Greeting -->
+  <section class="px-6 pt-6">
+    <h2 id="greeting" class="text-xl md:text-2xl font-semibold text-purple-200">
+      Welcome back 👋
+    </h2>
+    <p class="text-gray-400 mt-1">
+      Let’s keep the momentum going.
+    </p>
+  </section>
 
-  <!-- Recently Reviewed Section -->
+  <!-- Recently Reviewed -->
   <main class="flex-grow px-6 py-8">
-    <h2 class="text-2xl font-semibold text-purple-300 mb-4">Recently Reviewed Lessons 📘</h2>
-    <div id="recent-lessons" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    <h3 class="text-2xl font-semibold text-purple-300 mb-4">
+      Recently Reviewed Lessons
+    </h3>
+
+    <div id="recent-lessons" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
   </main>
 
   <!-- Footer -->
   <footer class="bg-gray-800/80 text-sm text-center text-gray-400 py-4">
-    &copy; 2025 PhysiPack. All rights reserved.
+    &copy; 2025 Axiom Academy. All rights reserved.
   </footer>
 
   <!-- Scripts -->
   <script type="module">
     import { auth, db } from "./js/firebase/firebase-config.js";
-    import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { signOut, onAuthStateChanged } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { doc, getDoc } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const greetingDiv = document.getElementById("greeting");
+    const greeting = document.getElementById("greeting");
     const adminContainer = document.getElementById("admin-btn-container");
     const recentDiv = document.getElementById("recent-lessons");
 
-    // Show greeting & admin button
+    // Load user from localStorage
     const storedUser = JSON.parse(localStorage.getItem("user"));
     if (storedUser) {
-      greetingDiv.textContent = `Hello ${storedUser.username || storedUser.name || storedUser.email}! 🫡`;
+      greeting.textContent = `Welcome back, ${storedUser.username || storedUser.email}! 👋`;
 
       if (storedUser.role_id === 1) {
         const adminLink = document.createElement("a");
-        adminLink.href = "./html/admin.html";
+        adminLink.href = "html/admin.html";
         adminLink.textContent = "Admin";
-        adminLink.className = "ml-2 px-3 py-1 rounded bg-blue-700 hover:bg-blue-800";
+        adminLink.className =
+          "px-3 py-1 rounded bg-blue-700 hover:bg-blue-800 text-white text-sm";
         adminContainer.appendChild(adminLink);
       }
     }
 
-    // Load recently reviewed lessons
+    // Auth guard + recently reviewed
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        window.location.href = "html/login2.html";
+        window.location.href = "html/login.html";
         return;
       }
 
       const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-      if (!userSnap.exists()) return;
+      const snap = await getDoc(userRef);
+      if (!snap.exists()) return;
 
-      const userData = userSnap.data();
-      const recent = userData.recentlyReviewed || [];
+      const recent = snap.data().recentlyReviewed || [];
 
       if (recent.length === 0) {
-        recentDiv.innerHTML = `<p class="text-gray-400 italic">No lessons reviewed yet. 📚</p>`;
+        recentDiv.innerHTML =
+          `<p class="text-gray-400 italic">No lessons reviewed yet.</p>`;
         return;
       }
 
-      // Sort by most recent date
       recent.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-      // Limit to 6 most recent lessons
       const latest = recent.slice(0, 6);
 
-      recentDiv.innerHTML = latest.map(lesson => `
+      recentDiv.innerHTML = latest.map(l => `
         <div class="bg-gray-900/60 rounded-xl p-5 shadow-lg hover:shadow-purple-500/20 transition">
-          <h3 class="text-xl font-semibold text-purple-200 mb-2">${lesson.title}</h3>
-          <p class="text-gray-400 text-sm mb-4">Reviewed on ${new Date(lesson.date).toLocaleDateString()}</p>
-          <a href="html/lesson.html?id=${lesson.id}" 
+          <h4 class="text-lg font-semibold text-purple-200 mb-2">${l.title}</h4>
+          <p class="text-gray-400 text-sm mb-4">
+            Reviewed on ${new Date(l.date).toLocaleDateString()}
+          </p>
+          <a href="html/lesson.html?id=${l.id}"
              class="inline-block px-4 py-2 bg-purple-700 hover:bg-purple-800 rounded-lg text-sm font-medium">
-            Review Again 🔁
+            Review again
           </a>
         </div>
       `).join("");
     });
 
-    // Logout button
+    // Logout
     document.getElementById("logout-btn").addEventListener("click", async () => {
-      try {
-        await signOut(auth);
-        localStorage.removeItem("user");
-        window.location.href = "html/login2.html";
-      } catch (err) {
-        console.error("Logout error:", err);
-      }
+      await signOut(auth);
+      localStorage.removeItem("user");
+      window.location.href = "html/login.html";
     });
   </script>
 </body>

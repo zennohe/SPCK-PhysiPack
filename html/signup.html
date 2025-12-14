@@ -2,96 +2,104 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sign Up - PhysiPack</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signup - Axion Academy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body
-    class="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-purple-900 to-blue-900 text-white">
-    <div class="bg-gray-900/70 backdrop-blur-md p-8 rounded-2xl shadow-2xl w-full max-w-md">
-        <h2 class="text-3xl font-bold mb-6 text-center">Sign Up for PhysiPack</h2>
-        <form class="space-y-4" action="/signup" method="POST">
-            <input type="email" placeholder="Email"
-                class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
-                required />
-            <input type="text" placeholder="Username"
-                class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
-                required />
+  class="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-purple-900 to-blue-900 text-white">
 
-            <!-- Password Input with Eye Icon -->
-            <div class="relative">
-                <input id="password" type="password" placeholder="Password" name="password"
-                    class="w-full p-3 pr-10 bg-gray-800 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
-                    required />
-                <button type="button" onmousedown="togglePassword('password', true)"
-                    onmouseup="togglePassword('password', false)" onmouseleave="togglePassword('password', false)"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
-                    <i data-lucide="eye"></i>
-                </button>
-            </div>
+  <div class="bg-gray-900/70 backdrop-blur-md p-8 rounded-2xl shadow-2xl w-full max-w-md">
+    <h2 class="text-3xl font-bold mb-6 text-center">Sign Up for Axion Academy</h2>
+    <form id="signupForm" class="space-y-4">
 
-            <!-- Confirm Password Input with Eye Icon -->
-            <div class="relative">
-                <input id="confirm-password" type="password" placeholder="Confirm Password" name="confirm-password"
-                    class="w-full p-3 pr-10 bg-gray-800 rounded-xl border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
-                    required />
-                <button type="button" onmousedown="togglePassword('confirm-password', true)"
-                    onmouseup="togglePassword('confirm-password', false)"
-                    onmouseleave="togglePassword('confirm-password', false)"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
-                    <i data-lucide="eye"></i>
-                </button>
-            </div>
+      <!-- Username -->
+      <input id="username" type="text" placeholder="Username" required
+        class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 focus:ring-2 focus:ring-purple-600" />
 
-            <select name="grade" class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 text-white" required>
-                <option value="">Select Grade</option>
-                <option value="6">Grade 6</option>
-                <option value="7">Grade 7</option>
-                <option value="8">Grade 8</option>
-                <option value="9">Grade 9</option>
-                <option value="10">Grade 10</option>
-            </select>
+      <!-- Email -->
+      <input id="email" type="email" placeholder="Email" required
+        class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 focus:ring-2 focus:ring-purple-600" />
 
-            <button type="submit"
-                class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-3 rounded-xl transition duration-200 shadow-md">
-                Sign Up
-            </button>
-        </form>
+      <!-- Password -->
+      <input id="password" type="password" placeholder="Password" required
+        class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 focus:ring-2 focus:ring-purple-600" />
 
-        <p class="mt-6 text-center text-gray-400">
-            Already have an account?
-            <a href="login.html" class="ml-2 text-purple-400 hover:text-purple-300 underline">Login</a>
-        </p>
-    </div>
+      <!-- Confirm Password -->
+      <input id="confirmPassword" type="password" placeholder="Confirm Password" required
+        class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 focus:ring-2 focus:ring-purple-600" />
 
-    <script>
-        function togglePassword(id, show) {
-            const input = document.getElementById(id);
-            input.type = show ? "text" : "password";
-        }
-        lucide.createIcons();
+      <!-- Grade dropdown (last field) -->
+      <select id="grade" required
+        class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 focus:ring-2 focus:ring-purple-600">
+        <option value="" disabled selected>Select your grade</option>
+        <option value="6">Grade 6</option>
+        <option value="7">Grade 7</option>
+        <option value="8">Grade 8</option>
+        <option value="9">Grade 9</option>
+        <option value="10">Grade 10</option>
+        <option value="11">Grade 11</option>
+        <option value="12">Grade 12</option>
+      </select>
 
-        // Basic client-side validation
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
-        if (!email.includes("@")) {
-            message.textContent = "Invalid email format.";
-            return;
-        }
-        if (!passwordRegex.test(password)) {
-            message.textContent = "Password must be at least 6 characters, include uppercase, lowercase, and a number.";
-            return;
-        }
-        if (password !== confirmPassword) {
-            message.textContent = "Passwords do not match.";
-            return;
-        }
-    </script>
+      <!-- Submit button -->
+      <button type="submit"
+        class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-3 rounded-xl transition duration-200 shadow-md">
+        Sign Up
+      </button>
+    </form>
 
-    <script src="../js/firebase/firebase-config.js"></script>
+    <p class="mt-6 text-center text-gray-400">
+      Already have an account?
+      <a href="login.html" class="ml-2 text-purple-400 hover:text-purple-300 underline">Login</a>
+    </p>
+  </div>
 
-</body>
+  <script type="module">
+    import { auth, db } from "../js/firebase/firebase-config.js";
+    import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-</html>
+    const form = document.getElementById("signupForm");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const username = document.getElementById("username").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const grade = document.getElementById("grade").value;
+      const password = document.getElementById("password").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
+
+      if (password !== confirmPassword) {
+        alert("Passwords do not match!");
+        return;
+      }
+
+      try {
+        // ✅ Create Firebase Auth user
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // ✅ Create Firestore user doc
+        await setDoc(doc(db, "users", user.uid), {
+          username,
+          email,
+          grade,
+          role_id: 2,
+          total_XP: 0,
+          completedLessons: [],
+          recentlyReviewed: [],
+          createdAt: new Date(),
+        });
+
+        alert("Signup successful!");
+        window.location.href = "login2.html";
+      } catch (error) {
+        console.error("Signup error:", error);
+        alert("Error: " + error.message);
+      }
+    });
+  </script>
